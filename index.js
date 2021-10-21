@@ -18,6 +18,7 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 
 const userRoutes = require("./routes/users");
+const apiRouts = require("./api");
 const campgroundRoutes = require("./routes/campgrounds");
 const reviewRoutes = require("./routes/reviews");
 
@@ -30,7 +31,8 @@ mongoose.connect("mongodb://localhost:27017/yelp-camp", {
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
-db.once("open", () => {
+db.once("open", () =>
+{
   console.log("Database connected");
 });
 
@@ -117,31 +119,44 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-app.use((req, res, next) => {
+app.use((req, res, next) =>
+{
   res.locals.currentUser = req.user;
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   next();
 });
 
+function defineApiRouts()
+{
+  for (let route in apiRouts) {
+    app.use(route, apiRouts[route])
+  }
+}
+
 app.use("/", userRoutes);
 app.use("/campgrounds", campgroundRoutes);
 app.use("/campgrounds/:id/reviews", reviewRoutes);
+defineApiRouts()
 
-app.get("/", (req, res) => {
+app.get("/", (req, res) =>
+{
   res.render("home");
 });
 
-app.all("*", (req, res, next) => {
+app.all("*", (req, res, next) =>
+{
   next(new ExpressError("Page Not Found", 404));
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, next) =>
+{
   const { statusCode = 500 } = err;
   if (!err.message) err.message = "Oh No, Something Went Wrong!";
   res.status(statusCode).render("error", { err });
 });
 
-app.listen(8080, () => {
+app.listen(8080, () =>
+{
   console.log("Serving on port 8080");
 });
